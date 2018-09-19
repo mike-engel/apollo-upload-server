@@ -8,7 +8,8 @@ import {
   FilesBeforeMapUploadError,
   FileMissingUploadError,
   UploadPromiseDisconnectUploadError,
-  FileStreamDisconnectUploadError
+  FileStreamDisconnectUploadError,
+  FileParsingError
 } from './errors'
 
 class Upload {
@@ -116,9 +117,8 @@ export const processRequest = (
           mimetype,
           encoding
         })
-      else
-        // Discard the unexpected file.
-        stream.resume()
+      // Discard the unexpected file.
+      else stream.resume()
     })
 
     parser.once('filesLimit', () => {
@@ -137,6 +137,14 @@ export const processRequest = (
             upload.reject(
               new FileMissingUploadError('File missing in the request.')
             )
+    })
+
+    parser.once('error', () => {
+      return reject(
+        new FileParsingError(
+          'File uploads are malformed or could not be parsed.'
+        )
+      )
     })
 
     request.on('close', () => {

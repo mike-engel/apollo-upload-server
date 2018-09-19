@@ -11,13 +11,15 @@ import {
   MaxFilesUploadError,
   MapBeforeOperationsUploadError,
   FilesBeforeMapUploadError,
-  FileMissingUploadError
+  FileMissingUploadError,
+  FileParsingError
 } from '.'
 
 // GraphQL multipart request spec:
 // https://github.com/jaydenseric/graphql-multipart-request-spec
 
 const TEST_FILE_PATH = path.join(__dirname, 'package.json')
+const MALFORMED_TEST_FILE_PATH = path.join(__dirname, 'package-malformed.json')
 
 async function startServer(middlewares) {
   const port = await getPort()
@@ -367,6 +369,40 @@ test('Misorder files before “map”.', async t => {
       '1': ['variables.file']
     })
   )
+
+  await post(port, body)
+
+  server.close()
+})
+
+test('Malformed files or request body.', async t => {
+  const { port, server } = await startServer([
+    async (ctx, next) => {
+      await t.throws(next, { instanceOf: FileParsingError })
+      ctx.status = 204
+    },
+    apolloUploadKoa()
+  ])
+
+  const body = new FormData()
+
+  body.append(
+    'operations',
+    JSON.stringify({
+      variables: {
+        file: null
+      }
+    })
+  )
+
+  body.append(
+    'map',
+    JSON.stringify({
+      '1': ['variables.file']
+    })
+  )
+
+  body.append('1', fs.createReadStream(MALFORMED_TEST_FILE_PATH))
 
   await post(port, body)
 

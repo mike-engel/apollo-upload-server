@@ -25,3 +25,4 @@ export class FilesBeforeMapUploadError extends UploadError {}
 export class FileMissingUploadError extends UploadError {}
 export class UploadPromiseDisconnectUploadError extends UploadError {}
 export class FileStreamDisconnectUploadError extends UploadError {}
+export class FileParsingError extends UploadError {}
